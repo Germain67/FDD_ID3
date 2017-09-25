@@ -78,9 +78,6 @@ public class Id3Modified
   extends AbstractClassifier 
   implements TechnicalInformationHandler, Sourcable {
 
-  // TODO : Yolo
-
-
   /** for serialization */
   static final long serialVersionUID = -2693678647096322561L;
   
@@ -310,6 +307,8 @@ public class Id3Modified
    * @throws Exception if computation fails
    */
   private double computeEntropy(Instances data) throws Exception {
+    double alpha = 0.5;
+
 
     double [] classCounts = new double[data.numClasses()];
     Enumeration instEnum = data.enumerateInstances();
@@ -320,11 +319,19 @@ public class Id3Modified
     double entropy = 0;
     for (int j = 0; j < data.numClasses(); j++) {
       if (classCounts[j] > 0) {
-        entropy -= classCounts[j] * Utils.log2(classCounts[j]);
+      //        entropy -= classCounts[j] * Utils.log2(classCounts[j]);
+          double p = classCounts[j];
+          entropy += Math.pow(p, alpha) - 1;
+        }
       }
-    }
+
+      entropy /= (Math.pow(2, 1-alpha) - 1);
+
+      //    return entropy;
+
     entropy /= (double) data.numInstances();
     return entropy + Utils.log2(data.numInstances());
+
   }
 
   /**
