@@ -36,7 +36,9 @@ import weka.core.Capabilities.Capability;
 import weka.core.TechnicalInformation.Field;
 import weka.core.TechnicalInformation.Type;
 
+import java.util.Collections;
 import java.util.Enumeration;
+import java.util.Vector;
 
 /**
  <!-- globalinfo-start -->
@@ -64,24 +66,24 @@ import java.util.Enumeration;
  *
  <!-- options-start -->
  * Valid options are: <p/>
- * 
+ *
  * <pre> -D
  *  If set, classifier is run in debug mode and
  *  may output additional info to the console</pre>
- * 
+ *
  <!-- options-end -->
  *
  * @author Eibe Frank (eibe@cs.waikato.ac.nz)
  * @version $Revision: 8109 $ 
  */
 public class Id3Modified
-  extends AbstractClassifier 
-  implements TechnicalInformationHandler, Sourcable {
+        extends AbstractClassifier
+        implements TechnicalInformationHandler, Sourcable {
 
   /** for serialization */
   static final long serialVersionUID = -2693678647096322561L;
-  
-  /** The node's successors. */ 
+
+  /** The node's successors. */
   private Id3Modified[] m_Successors;
 
   /** Attribute used for splitting. */
@@ -97,28 +99,63 @@ public class Id3Modified
   private Attribute m_ClassAttribute;
 
   /**
+   * Added Attribute : Alpha
+   */
+  protected double alpha = 0.5;
+
+  /**
+   * Returns the tip text for this property
+   *
+   * @return tip text for this property suitable for displaying in the
+   *         explorer/experimenter gui
+   */
+  public String alphaTipText() {
+    return "The factor alpha for the Havrda & Charvat Entropy";
+  }
+
+  /**
+   * Get the value of Alpha.
+   *
+   * @return Value of Alpha.
+   */
+  public double getAlpha() {
+
+    return alpha;
+  }
+
+  /**
+   * Set the value of Alpha.
+   *
+   * @param v Value to assign to Alpha.
+   */
+  public void setAlpha(double v) {
+
+    alpha = v;
+  }
+
+  /**
    * Returns a string describing the classifier.
    * @return a description suitable for the GUI.
    */
   public String globalInfo() {
 
     return  "Class for constructing an unpruned decision tree based on the ID3 "
-      + "algorithm. Can only deal with nominal attributes. No missing values "
-      + "allowed. Empty leaves may result in unclassified instances. For more "
-      + "information see: \n\n"
-      + getTechnicalInformation().toString();
+            + "algorithm. Can only deal with nominal attributes. No missing values "
+            + "allowed. Empty leaves may result in unclassified instances. For more "
+            + "information see: \n\n"
+            + getTechnicalInformation().toString();
   }
 
   /**
    * Returns an instance of a TechnicalInformation object, containing 
    * detailed information about the technical background of this class,
    * e.g., paper reference or book this class is based on.
-   * 
+   *
    * @return the technical information about this class
    */
   public TechnicalInformation getTechnicalInformation() {
     TechnicalInformation 	result;
-    
+
     result = new TechnicalInformation(Type.ARTICLE);
     result.setValue(Field.AUTHOR, "R. Quinlan");
     result.setValue(Field.YEAR, "1986");
@@ -127,7 +164,7 @@ public class Id3Modified
     result.setValue(Field.VOLUME, "1");
     result.setValue(Field.NUMBER, "1");
     result.setValue(Field.PAGES, "81-106");
-    
+
     return result;
   }
 
@@ -149,7 +186,7 @@ public class Id3Modified
 
     // instances
     result.setMinimumNumberInstances(0);
-    
+
     return result;
   }
 
@@ -167,7 +204,7 @@ public class Id3Modified
     // remove instances with missing class
     data = new Instances(data);
     data.deleteWithMissingClass();
-    
+
     makeTree(data);
   }
 
@@ -195,7 +232,7 @@ public class Id3Modified
       infoGains[att.index()] = computeInfoGain(data, att);
     }
     m_Attribute = data.attribute(Utils.maxIndex(infoGains));
-    
+
     // Make leaf if information gain is zero. 
     // Otherwise create successors.
     if (Utils.eq(infoGains[m_Attribute.index()], 0)) {
@@ -226,18 +263,18 @@ public class Id3Modified
    * @return the classification
    * @throws NoSupportForMissingValuesException if instance has missing values
    */
-  public double classifyInstance(Instance instance) 
-    throws NoSupportForMissingValuesException {
+  public double classifyInstance(Instance instance)
+          throws NoSupportForMissingValuesException {
 
     if (instance.hasMissingValue()) {
       throw new NoSupportForMissingValuesException("Id3Modified: no missing values, "
-                                                   + "please.");
+              + "please.");
     }
     if (m_Attribute == null) {
       return m_ClassValue;
     } else {
       return m_Successors[(int) instance.value(m_Attribute)].
-        classifyInstance(instance);
+              classifyInstance(instance);
     }
   }
 
@@ -248,18 +285,18 @@ public class Id3Modified
    * @return the class distribution for the given instance
    * @throws NoSupportForMissingValuesException if instance has missing values
    */
-  public double[] distributionForInstance(Instance instance) 
-    throws NoSupportForMissingValuesException {
+  public double[] distributionForInstance(Instance instance)
+          throws NoSupportForMissingValuesException {
 
     if (instance.hasMissingValue()) {
       throw new NoSupportForMissingValuesException("Id3Modified: no missing values, "
-                                                   + "please.");
+              + "please.");
     }
     if (m_Attribute == null) {
       return m_Distribution;
-    } else { 
+    } else {
       return m_Successors[(int) instance.value(m_Attribute)].
-        distributionForInstance(instance);
+              distributionForInstance(instance);
     }
   }
 
@@ -284,30 +321,54 @@ public class Id3Modified
    * @return the information gain for the given attribute and data
    * @throws Exception if computation fails
    */
-  private double computeInfoGain(Instances data, Attribute att) 
-    throws Exception {
+  private double computeInfoGain(Instances data, Attribute att)
+          throws Exception {
 
     double infoGain = computeEntropy(data);
     Instances[] splitData = splitData(data, att);
     for (int j = 0; j < att.numValues(); j++) {
       if (splitData[j].numInstances() > 0) {
         infoGain -= ((double) splitData[j].numInstances() /
-                     (double) data.numInstances()) *
-          computeEntropy(splitData[j]);
+                (double) data.numInstances()) *
+                computeEntropy(splitData[j]);
       }
     }
     return infoGain;
   }
 
+  @Override
+  public void setOptions(String[] options) throws Exception {
+    String alphaString = Utils.getOption('A', options);
+    if (alphaString.length() != 0 && (alpha = Double.parseDouble(alphaString)) == 1.0) {
+      throw new Exception("Alpha must be a double different from 1");
+    }
+  }
+
+  /**
+   * Gets the current settings of the Classifier.
+   *
+   * @return an array of strings suitable for passing to setOptions
+   */
+  @Override
+  public String[] getOptions() {
+
+    Vector<String> options = new Vector<String>();
+    options.add("-A");
+    options.add("" + alpha);
+    Collections.addAll(options, super.getOptions());
+    return options.toArray(new String[0]);
+  }
+
   /**
    * Computes the entropy of a dataset.
-   * 
+   *
    * @param data the data for which entropy is to be computed
    * @return the entropy of the data's class distribution
    * @throws Exception if computation fails
    */
   private double computeEntropy(Instances data) throws Exception {
-    double alpha = 0.5;
+
+    double p;
 
 
     double [] classCounts = new double[data.numClasses()];
@@ -319,19 +380,18 @@ public class Id3Modified
     double entropy = 0;
     for (int j = 0; j < data.numClasses(); j++) {
       if (classCounts[j] > 0) {
-      //        entropy -= classCounts[j] * Utils.log2(classCounts[j]);
-          double p = classCounts[j];
-          entropy += Math.pow(p, alpha) - 1;
-        }
+//        entropy -= classCounts[j] * Utils.log2(classCounts[j]);
+        p = classCounts[j];
+        entropy += Math.pow(p, alpha) - 1;
       }
+    }
 
-      entropy /= (Math.pow(2, 1-alpha) - 1);
+    entropy /= (Math.pow(2, 1-alpha) - 1);
 
-      //    return entropy;
+//    return entropy;
 
-    entropy /= (double) data.numInstances();
+//    entropy /= (double) data.numInstances();
     return entropy + Utils.log2(data.numInstances());
-
   }
 
   /**
@@ -367,13 +427,13 @@ public class Id3Modified
   private String toString(int level) {
 
     StringBuffer text = new StringBuffer();
-    
+
     if (m_Attribute == null) {
       if (Utils.isMissingValue(m_ClassValue)) {
         text.append(": null");
       } else {
         text.append(": " + m_ClassAttribute.value((int) m_ClassValue));
-      } 
+      }
     } else {
       for (int j = 0; j < m_Attribute.numValues(); j++) {
         text.append("\n");
@@ -389,7 +449,7 @@ public class Id3Modified
 
   /**
    * Adds this tree recursively to the buffer.
-   * 
+   *
    * @param id          the unqiue id for the method
    * @param buffer      the buffer to add the source code to
    * @return            the last ID being used
@@ -400,10 +460,10 @@ public class Id3Modified
     int                 i;
     int                 newID;
     StringBuffer[]      subBuffers;
-    
+
     buffer.append("\n");
     buffer.append("  protected static double node" + id + "(Object[] i) {\n");
-    
+
     // leaf?
     if (m_Attribute == null) {
       result = id;
@@ -420,7 +480,7 @@ public class Id3Modified
     } else {
       buffer.append("    checkMissing(i, " + m_Attribute.index() + ");\n\n");
       buffer.append("    // " + m_Attribute.name() + "\n");
-      
+
       // subtree calls
       subBuffers = new StringBuffer[m_Attribute.numValues()];
       newID = id;
@@ -431,8 +491,8 @@ public class Id3Modified
         if (i > 0) {
           buffer.append("else ");
         }
-        buffer.append("if (((String) i[" + m_Attribute.index() 
-            + "]).equals(\"" + m_Attribute.value(i) + "\"))\n");
+        buffer.append("if (((String) i[" + m_Attribute.index()
+                + "]).equals(\"" + m_Attribute.value(i) + "\"))\n");
         buffer.append("      return node" + newID + "(i);\n");
 
         subBuffers[i] = new StringBuffer();
@@ -440,7 +500,7 @@ public class Id3Modified
       }
       buffer.append("    else\n");
       buffer.append("      throw new IllegalArgumentException(\"Value '\" + i["
-          + m_Attribute.index() + "] + \"' is not allowed!\");\n");
+              + m_Attribute.index() + "] + \"' is not allowed!\");\n");
       buffer.append("  }\n");
 
       // output subtree code
@@ -448,13 +508,13 @@ public class Id3Modified
         buffer.append(subBuffers[i].toString());
       }
       subBuffers = null;
-      
+
       result = newID;
     }
-    
+
     return result;
   }
-  
+
   /**
    * Returns a string that describes the classifier as source. The
    * classifier will be contained in a class with the given name (there may
@@ -475,14 +535,14 @@ public class Id3Modified
   public String toSource(String className) throws Exception {
     StringBuffer        result;
     int                 id;
-    
+
     result = new StringBuffer();
 
     result.append("class " + className + " {\n");
     result.append("  private static void checkMissing(Object[] i, int index) {\n");
     result.append("    if (i[index] == null)\n");
     result.append("      throw new IllegalArgumentException(\"Null values "
-        + "are not allowed!\");\n");
+            + "are not allowed!\");\n");
     result.append("  }\n\n");
     result.append("  public static double classify(Object[] i) {\n");
     id = 0;
@@ -493,10 +553,10 @@ public class Id3Modified
 
     return result.toString();
   }
-  
+
   /**
    * Returns the revision string.
-   * 
+   *
    * @return		the revision
    */
   public String getRevision() {
