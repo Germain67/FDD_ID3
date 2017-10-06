@@ -101,7 +101,7 @@ public class Id3Modified
   /**
    * Added Attribute : Alpha
    */
-  protected double alpha = 0.5;
+  protected static double m_alpha = 0.5;
 
   /**
    * Returns the tip text for this property
@@ -110,7 +110,7 @@ public class Id3Modified
    *         explorer/experimenter gui
    */
   public String alphaTipText() {
-    return "The factor alpha for the Havrda & Charvat Entropy";
+    return "The factor m_alpha for the Havrda & Charvat Entropy";
   }
 
   /**
@@ -120,7 +120,7 @@ public class Id3Modified
    */
   public double getAlpha() {
 
-    return alpha;
+    return m_alpha;
   }
 
   /**
@@ -129,8 +129,11 @@ public class Id3Modified
    * @param v Value to assign to Alpha.
    */
   public void setAlpha(double v) {
-
-    alpha = v;
+    if (v == 1) {
+      System.err.println("Alpha can not be equal to 1");
+    } else {
+      m_alpha = v;
+    }
   }
 
   /**
@@ -339,9 +342,11 @@ public class Id3Modified
   @Override
   public void setOptions(String[] options) throws Exception {
     String alphaString = Utils.getOption('A', options);
-    if (alphaString.length() != 0 && (alpha = Double.parseDouble(alphaString)) == 1.0) {
+    if (alphaString.length() != 0 && ((m_alpha = Double.parseDouble(alphaString)) == 1d || (m_alpha < 0))) {
       throw new Exception("Alpha must be a double different from 1");
     }
+    super.setOptions(options);
+    Utils.checkForRemainingOptions(options);
   }
 
   /**
@@ -354,7 +359,7 @@ public class Id3Modified
 
     Vector<String> options = new Vector<String>();
     options.add("-A");
-    options.add("" + alpha);
+    options.add("" + m_alpha);
     Collections.addAll(options, super.getOptions());
     return options.toArray(new String[0]);
   }
@@ -367,10 +372,6 @@ public class Id3Modified
    * @throws Exception if computation fails
    */
   private double computeEntropy(Instances data) throws Exception {
-
-    double p;
-
-
     double [] classCounts = new double[data.numClasses()];
     Enumeration instEnum = data.enumerateInstances();
     while (instEnum.hasMoreElements()) {
@@ -380,18 +381,12 @@ public class Id3Modified
     double entropy = 0;
     for (int j = 0; j < data.numClasses(); j++) {
       if (classCounts[j] > 0) {
-        entropy += Math.pow(classCounts[j] / (double) data.numInstances(), alpha) - 1;
+        entropy += Math.pow(classCounts[j] / (double) data.numInstances(), m_alpha) - 1d;
       } else { //  In this case, equation above is always equal to -1
-          entropy -= 1; //
+          entropy -= 1d; // Performance enhancement
       }
     }
-
-
-
-    return (entropy / (Math.pow(2, 1-alpha) - 1));
-
-//    entropy /= (double) data.numInstances();
-//    return entropy + Utils.log2(data.numInstances());
+    return (entropy / (Math.pow(2d, 1d- m_alpha) - 1d));
   }
 
   /**
