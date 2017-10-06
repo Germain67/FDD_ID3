@@ -74,7 +74,7 @@ import java.util.Vector;
  <!-- options-end -->
  *
  * @author Eibe Frank (eibe@cs.waikato.ac.nz)
- * @version $Revision: 8109 $ 
+ * @version $Revision: 8109 $
  */
 public class Id3Modified
         extends AbstractClassifier
@@ -147,7 +147,7 @@ public class Id3Modified
   }
 
   /**
-   * Returns an instance of a TechnicalInformation object, containing 
+   * Returns an instance of a TechnicalInformation object, containing
    * detailed information about the technical background of this class,
    * e.g., paper reference or book this class is based on.
    *
@@ -233,7 +233,7 @@ public class Id3Modified
     }
     m_Attribute = data.attribute(Utils.maxIndex(infoGains));
 
-    // Make leaf if information gain is zero. 
+    // Make leaf if information gain is zero.
     // Otherwise create successors.
     if (Utils.eq(infoGains[m_Attribute.index()], 0)) {
       m_Attribute = null;
@@ -380,18 +380,18 @@ public class Id3Modified
     double entropy = 0;
     for (int j = 0; j < data.numClasses(); j++) {
       if (classCounts[j] > 0) {
-//        entropy -= classCounts[j] * Utils.log2(classCounts[j]);
-        p = classCounts[j];
-        entropy += Math.pow(p, alpha) - 1;
+        entropy += Math.pow(classCounts[j] / (double) data.numInstances(), alpha) - 1;
+      } else { //  In this case, equation above is always equal to -1
+          entropy -= 1; //
       }
     }
 
-    entropy /= (Math.pow(2, 1-alpha) - 1);
 
-//    return entropy;
+
+    return (entropy / (Math.pow(2, 1-alpha) - 1));
 
 //    entropy /= (double) data.numInstances();
-    return entropy + Utils.log2(data.numInstances());
+//    return entropy + Utils.log2(data.numInstances());
   }
 
   /**
