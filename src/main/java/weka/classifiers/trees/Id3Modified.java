@@ -118,10 +118,7 @@ public class Id3Modified
    *
    * @return Value of Alpha.
    */
-  public double getAlpha() {
-
-    return m_alpha;
-  }
+  public double getAlpha() {return m_alpha;}
 
   /**
    * Set the value of Alpha.
@@ -379,14 +376,16 @@ public class Id3Modified
       classCounts[(int) inst.classValue()]++;
     }
     double entropy = 0;
+    double numInstance = data.numInstances();
+
     for (int j = 0; j < data.numClasses(); j++) {
       if (classCounts[j] > 0) {
-        entropy += Math.pow(classCounts[j] / (double) data.numInstances(), m_alpha) - 1d;
+        entropy += Math.pow(classCounts[j] / numInstance, m_alpha) - 1d;
       } else { //  In this case, equation above is always equal to -1
           entropy -= 1d; // Performance enhancement
       }
     }
-    return (entropy / (Math.pow(2d, 1d- m_alpha) - 1d));
+    return (entropy / (Math.pow(2d, 1d - m_alpha) - 1d));
   }
 
   /**
